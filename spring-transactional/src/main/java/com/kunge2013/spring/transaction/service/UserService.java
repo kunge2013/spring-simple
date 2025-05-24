@@ -9,11 +9,15 @@ package com.kunge2013.spring.transaction.service;
 
 import com.kunge2013.spring.transaction.entity.User;
 import com.kunge2013.spring.transaction.mapper.UserMapper;
+import lombok.SneakyThrows;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import javax.sql.DataSource;
+import java.sql.Connection;
 
 
 @Service
@@ -70,5 +74,20 @@ public class UserService {
     public void notSupported() {
         userMapper.insert(new User("notsupported", 40));
         throw new RuntimeException("propagation not supported");
+    }
+
+    @Resource
+    private DataSource dataSource;
+
+    // 模拟 connection holder is null 的场景
+    @SneakyThrows
+    public void simulateConnectionHolderIsNull() {
+        // 在没有事务的情况下直接获取连接
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            System.out.println("Connection obtained: " + connection.isValid(5)); // 可能抛出异常或 connection 为 null
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 }
